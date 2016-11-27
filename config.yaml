@@ -1,0 +1,24 @@
+############################################
+##        Source paths to be parsed       ##
+############################################
+pathToScan:
+    - /path/to/project/directory0
+    - /path/to/project/directory1
+    - /path/to/project/directiry2
+############################################
+##     Regular macroses to be defined     ##
+############################################
+rmacrosToDefine:
+    - TEST_MACRO0                 ## -DTEST_MACRO0
+    - TEST_MACRO1                 ## -DTEST_MACRO1
+############################################
+##   Value-driven macroses to be defined  ##
+############################################
+vmacrosToDefine:
+    - TEST_VALUE: 1               ## -DTEST_VALUE=1
+    - TEST_VMACRO: TEST_VALUE     ## -DTEST_VMACRO=TEST_VALUE
+############################################
+##  Function-like macroses to be defined  ##
+############################################
+fmacrosToDefine:
+    - TEST_FMACRO: TEST_VALUE     ## -D"TEST_MACRO()=TEST_VALUE"
