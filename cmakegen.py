@@ -1,6 +1,11 @@
 #!/usr/bin/env python3.5
 
-"""TODO: add module description"""
+"""
+The module provides capability to generate CMake file
+from a bunch of C/C++ sources. As an input user should
+specify set of paths to be parsed and optionaly set of
+macroses to be defined.
+"""
 
 #
 # MIT License
@@ -38,11 +43,11 @@ import yaml
 
 LOGGER = logging.getLogger("cmakegen")
 LOGGER_CONFIGS = {
-    'FMT': {
+    'FMT': {    # debug formats to be chosen at compile time
         'MESG': "[%(asctime)s][%(levelname)-8s] - %(message)s",
         'DATE': "%y-%m-%d %H:%M:%S",
     },
-    'LVL': {
+    'LVL': {    # debug levels to be chosen at run time
         'DBG': logging.DEBUG,
         'INF': logging.INFO,
         'ERR': logging.ERROR,
@@ -51,42 +56,41 @@ LOGGER_CONFIGS = {
 }
 
 STATUS = {
-    'CONFIG_FILE_IS_NOT_EXIST': 0x01,
-    'CONFIG_FILE_IS_NOT_VALID': 0x02,
+    'CONFIG_FILE_IS_NOT_EXIST': 0x01,   # check YAML file existence
+    'CONFIG_FILE_IS_NOT_VALID': 0x02,   # check YAML file structure
 }
 
 
 class SourceParser(object):
-    """TODO: add class description"""
+    """
+    The class handles project scanning and CMake file generation.
+    """
 
-    def __init__(self, configuration):
+    def __init__(self, config):
         """
-        @brief TODO: add ctor description.
+        @brief Saves project settings from and
+               prepares CMake file header.
 
-        @param configuration Project scan settings
-               'paths': ("/abs/path/to/dir0", "/abs/path/to/dir1", ...)
-               'rmacroses': ("MACRO0", "MACRO1", ...)
-               'vmacroses': (
-                   {"MACRO0": "VALUE0"},
-                   {"MACRO1": "VALUE1"},
-                   ...)
-               'fmacroses': (
-                   {"MACRO0": "VALUE0"},
-                   {"MACRO1": "VALUE1"},
-                   ...)
+        @param  config (dict)  Project scan settings
+                    'paths': ("/abs/path/to/dir0", "/abs/path/to/dir1", ...)
+                    'rmacroses': ("MACRO0", "MACRO1", ...)
+                    'vmacroses': (
+                        {"MACRO0": "VALUE0"},
+                        {"MACRO1": "VALUE1"},
+                        ...)
+                    'fmacroses': (
+                        {"MACRO2": "VALUE2"},
+                        {"MACRO3": "VALUE3"},
+                        ...)
         """
-        self.__includes = set()     # Abs path to include directories
-        self.__sources = set()      # Abs paths to sources
-        self.__cmakelist = list()   # CMake file lines
-        # Abs paths to project directories to be scaned
-        self.__paths = configuration['paths']
-        # Regular macroses to be defined
-        self.__rmacroses = configuration['rmacroses']
-        # Value-driven macroses to be defined
-        self.__vmacroses = configuration['vmacroses']
-        # Function-like macroses to be defined
-        self.__fmacroses = configuration['fmacroses']
-        # Log configuration
+        self.__paths = config['paths']              # abs paths to sources
+        self.__rmacroses = config['rmacroses']      # regular macroses
+        self.__vmacroses = config['vmacroses']      # value-driven macroses
+        self.__fmacroses = config['fmacroses']      # function-like macroses
+        self.__includes = set()                     # abs paths to include dirs
+        self.__sources = set()                      # abs paths to source files
+        self.__cmakelist = list()                   # CMake file lines
+        # Log scan config
         for path in self.__paths:
             LOGGER.info("Path to be scaned '%s'", path)
         for rmacros in self.__rmacroses:
@@ -101,15 +105,16 @@ class SourceParser(object):
             LOGGER.info("Function-like macros to be defined '-D%s()=%s'",
                         [k for k in fmacros.keys()][0],
                         [v for v in fmacros.values()][0])
-        # Fill header of the CMake file
+        # Fill CMake file header
         self.__cmakelist.append("cmake_minimum_required(VERSION 2.8)\n")
         self.__cmakelist.append("project(dummy)\n")
 
     def __scan_path(self, path):
         """
-        @brief TODO: add method description
+        @brief Recursively scans path to determine
+               include directories and source files.
 
-        @param path Abs path to directory to be scaned recursively
+        @param  path (str)  Abs path to directory to be scaned.
         """
         LOGGER.info("Scanning path '%s'", path)
         for root, directories, files in os.walk(path):
@@ -126,12 +131,15 @@ class SourceParser(object):
 
     def __process_project(self):
         """
-        @brief Scan all project directories to find includes and sources
+        @brief Recursively scans all project directories.
         """
         for path in self.__paths:
             self.__scan_path(path)
 
     def __compose_definitions(self):
+        """
+        @brief Collects macroses to be defined.
+        """
         LOGGER.info("Composing definitions")
         self.__cmakelist.append("add_definitions(\n")
         for rmacros in self.__rmacroses:
@@ -147,6 +155,9 @@ class SourceParser(object):
         self.__cmakelist.append(")\n")
 
     def __compose_includes(self):
+        """
+        @brief Collects include directories.
+        """
         LOGGER.info("Composing includes")
         self.__cmakelist.append("include_directories(\n")
         for directory in sorted(self.__includes):
@@ -155,6 +166,9 @@ class SourceParser(object):
         self.__cmakelist.append(")\n")
 
     def __compose_sources(self):
+        """
+        @brief Collects source files.
+        """
         LOGGER.info("Composing sources")
         self.__cmakelist.append("add_executable(executable\n")
         for filepath in sorted(self.__sources):
@@ -164,7 +178,9 @@ class SourceParser(object):
 
     def gen_cmake_file(self, name="CMakeLists.txt"):
         """
-        @brief TODO: add description
+        @brief Generates CMake file based on information was collected.
+
+        @param  name (str)  Name of CMake file to be generated.
         """
         self.__process_project()
         self.__compose_definitions()
@@ -175,7 +191,7 @@ class SourceParser(object):
 
 def main():
     """
-    @brief Main entry point
+    @brief Main entry point.
     """
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,

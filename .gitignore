@@ -3,3 +3,5 @@
 .vscode
 *sublime*
 *.txt
+build
+dist
