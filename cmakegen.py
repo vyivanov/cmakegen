@@ -42,22 +42,27 @@ import yaml
 
 
 LOGGER = logging.getLogger("cmakegen")
-LOGGER_CONFIGS = {
+LOGGER_CONFIG = {
     'FMT': {    # debug formats to be chosen at compile time
-        'MESG': "[%(asctime)s][%(levelname)-8s] - %(message)s",
-        'DATE': "%y-%m-%d %H:%M:%S",
+        'MESG': "[%(asctime)s.%(msecs)03d][%(levelname)-5s] - %(message)s",
+        'DATE': "%d/%m/%Y %H:%M:%S",
     },
     'LVL': {    # debug levels to be chosen at run time
         'DBG': logging.DEBUG,
         'INF': logging.INFO,
         'ERR': logging.ERROR,
-        'CRT': logging.CRITICAL,
     },
 }
 
-STATUS = {
-    'CONFIG_FILE_IS_NOT_EXIST': 0x01,   # check YAML file existence
-    'CONFIG_FILE_IS_NOT_VALID': 0x02,   # check YAML file structure
+EXIT_CODE = {
+    'CONFIG_FILE_IS_NOT_EXIST': {
+        'MSG': "Config file is not exsist. Check file on existence.",
+        'CODE': 0x01
+    },
+    'CONFIG_FILE_IS_NOT_VALID': {
+        'MSG': "Config file is not valid. Check file structure.",
+        'CODE': 0x02
+    }
 }
 
 
@@ -205,16 +210,17 @@ def main():
     parser.add_argument(
         "-d", "--debug", action="store_true", help="Enable debug logs")
     args = parser.parse_args()
-    inflvl = LOGGER_CONFIGS['LVL']['INF']
-    dbglvl = LOGGER_CONFIGS['LVL']['DBG']
+    inflvl = LOGGER_CONFIG['LVL']['INF']
+    dbglvl = LOGGER_CONFIG['LVL']['DBG']
     logging.basicConfig(
-        format=LOGGER_CONFIGS['FMT']['MESG'],
-        datefmt=LOGGER_CONFIGS['FMT']['DATE'],
+        format=LOGGER_CONFIG['FMT']['MESG'],
+        datefmt=LOGGER_CONFIG['FMT']['DATE'],
         level=inflvl if not args.debug else dbglvl
     )
     if not os.path.exists(args.config):
-        LOGGER.critical("Config file '%s' is not exist", args.config)
-        sys.exit(STATUS['CONFIG_FILE_IS_NOT_EXIST'])
+        status = EXIT_CODE['CONFIG_FILE_IS_NOT_EXIST']
+        LOGGER.error(status['MSG'])
+        sys.exit(status['CODE'])
     with open(args.config, 'r') as config:
         yaml_config = yaml.load(config)
         try:
@@ -223,9 +229,9 @@ def main():
             vmacroses = yaml_config['vmacrosToDefine']
             fmacroses = yaml_config['fmacrosToDefine']
         except KeyError as error:
-            LOGGER.critical("Config field %s is not exist in '%s' file",
-                            error, args.config)
-            sys.exit(STATUS['CONFIG_FILE_IS_NOT_VALID'])
+            status = EXIT_CODE['CONFIG_FILE_IS_NOT_VALID']
+            LOGGER.error(status['MSG'] + " '%s' field." % error)
+            sys.exit(status['CODE'])
     SourceParser(
         {
             'paths': paths,
