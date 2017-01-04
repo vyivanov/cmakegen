@@ -10,7 +10,7 @@ macroses to be defined.
 #
 # MIT License
 #
-# Copyright (c) 2016 Vladimir Yu. Ivanov
+# Copyright (c) 2016-2017 Vladimir Yu. Ivanov
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -206,7 +206,7 @@ def main():
         epilog="Support: inbox@vova-ivanov.info"
     )
     parser.add_argument(
-        "config", help="YAML configuration file")
+        "config", metavar="CFG", help="YAML configuration file")
     parser.add_argument(
         "-d", "--debug", action="store_true", help="Enable debug logs")
     args = parser.parse_args()
